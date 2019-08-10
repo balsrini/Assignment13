@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 from keras.preprocessing.image import ImageDataGenerator
 import time
 from keras.callbacks import Callback
-from keras.preprocessing.image import ImageDataGenerator
 from keras import optimizers
 from keras import backend as K
 import warnings
@@ -69,7 +68,7 @@ def processInput(input,num_channel=64,kernel_size=(7,7),pad='same',stride=2):
 def fullyConnected(input):
     input = AveragePooling2D(7,7)(input)
     input =  Flatten()(input)   
-    input = Dense(1000)(input)    
+    input = Dense(10)(input)    
     return input
     
 #Defining the Restnet18 model
@@ -107,29 +106,38 @@ def reinit(normalize = True):
     import numpy as np
 
     transform = transforms.Compose([
-            transforms.Resize(255),
-            transforms.CenterCrop(224),
+            transforms.Resize(224),
+          #  transforms.Resize(255),
+         #   transforms.CenterCrop(224),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
             ])
 
     trainset = torchvision.datasets.CIFAR10(root='C:/Balaji/ML/Assignment13/train_data', train=True, download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=50000, shuffle=True, num_workers=0)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=500, shuffle=True, num_workers=0)
     data = iter(trainloader)
-    (inputs, labels) = data.next()
-    train_features = inputs.numpy()
-    train_features = np.transpose(train_features, (0, 2, 3, 1))
-    train_labels = labels.numpy()
+    
+    train_features = np.zeros((0,224,224,3))
+    train_labels = np.zeros((0))
+    for i,data in enumerate(trainloader, 0):
+        inputs, labels = data         
+        print("Training Data",i," ", train_features.shape)          
+        train_features = np.append(train_features,np.transpose(inputs,(0, 2, 3, 1)),axis = 0)        
+        train_labels = np.append(train_labels,labels, axis = 0)        
     num_classes = len(np.unique(train_labels))
     train_labels = np_utils.to_categorical(train_labels, num_classes)
     
     testset = torchvision.datasets.CIFAR10(root='C:/Balaji/ML/Assignment13/test_data', train=False, download=True, transform=transform)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=4, shuffle=False, num_workers=0)
-    test_data = iter(testloader)
-    (test_input, test_label) = test_data.next()
-    test_features = test_input.numpy()
-    test_features = np.transpose(test_features, (0, 2, 3, 1))
-    test_labels = test_label.numpy()   
+    testloader = torch.utils.data.DataLoader(testset, batch_size=500, shuffle=False, num_workers=0)  
+    test_features = np.zeros((0,224,224,3))
+    test_labels = np.zeros((0))
+
+    for i,data in enumerate(testloader, 0):
+        inputs, labels = data  
+        print("test Data",i)          
+        test_features = np.append(test_features,np.transpose(inputs,(0, 2, 3, 1)), axis = 0)
+        test_labels = np.append(test_labels,labels, axis = 0)     
+   
     test_labels = np_utils.to_categorical(test_labels, num_classes)
     return (num_classes,train_features,train_labels,test_features,test_labels)
 """
